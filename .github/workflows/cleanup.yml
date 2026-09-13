@@ -51,7 +51,7 @@ jobs:
           owner: supermi13
           repositories: ALL
           include_private: "true"
-          include_forks: "false"
+          include_forks: "true"
           include_archived: "false"
           retain_days: "30"
           keep_minimum_runs: "6"
