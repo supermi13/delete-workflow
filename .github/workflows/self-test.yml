@@ -1,0 +1,34 @@
+name: Self test (dry-run)
+
+# Manual smoke test: exercises both the Action form and the CLI form against
+# the current repository only. Read-only — dry-run can never delete anything.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  action-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run as composite action (dry-run)
+        uses: ./
+        with:
+          token: ${{ github.token }}
+          repositories: ${{ github.repository }}
+          dry_run: "true"
+
+  cli-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run as CLI (dry-run)
+        run: |
+          node index.js \
+            --token "${{ github.token }}" \
+            --repositories "${{ github.repository }}" \
+            --retain-days 30 \
+            --keep-minimum-runs 1 \
+            --dry-run

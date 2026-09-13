@@ -1,0 +1,135 @@
+name: "Delete Workflow Runs (All Repositories)"
+description: >-
+  Delete old GitHub Actions workflow runs across ALL repositories of a user or
+  organization account. Zero-dependency composite action (no build step);
+  dry-run by default.
+author: "supermi13"
+
+branding:
+  icon: "trash"
+  color: "red"
+
+inputs:
+  token:
+    description: >-
+      GitHub token. Must have Actions write + repo read on EVERY target
+      repository — use a classic PAT with `repo` scope (or a fine-grained PAT
+      with "Actions: Read and write" on the selected repositories). The
+      built-in `github.token` only reaches the current repository.
+    required: false
+    default: ""
+  baseUrl:
+    description: "GitHub API base URL (for GitHub Enterprise)"
+    required: false
+    default: "https://api.github.com"
+  owner:
+    description: >-
+      Account whose repositories are enumerated in ALL mode (user or org).
+      Defaults to the token's own account.
+    required: false
+    default: ""
+  repositories:
+    description: >-
+      "ALL" (default) to clean every repository of `owner`, or a comma/space
+      separated list of "owner/repo" entries to restrict the run.
+    required: false
+    default: "ALL"
+  include_private:
+    description: "Include private repositories in ALL mode"
+    required: false
+    default: "true"
+  include_forks:
+    description: "Include forked repositories in ALL mode"
+    required: false
+    default: "false"
+  include_archived:
+    description: "Include archived repositories in ALL mode"
+    required: false
+    default: "false"
+  repo_pattern:
+    description: "Only repositories whose name contains one of these comma-separated substrings"
+    required: false
+    default: ""
+  exclude_repos:
+    description: "Repositories to skip, comma-separated ('owner/repo' or 'repo-name')"
+    required: false
+    default: ""
+  retain_days:
+    description: "Delete runs older than this many days (0 = no age limit)"
+    required: false
+    default: "30"
+  keep_minimum_runs:
+    description: "Minimum number of newest runs to keep per workflow (or per day if use_daily_retention is true)"
+    required: false
+    default: "6"
+  use_daily_retention:
+    description: "If true, keep_minimum_runs is applied per day inside the retain window"
+    required: false
+    default: "false"
+  delete_workflow_pattern:
+    description: "Workflow name or filename substring pattern(s), comma-separated. Omit for all workflows."
+    required: false
+    default: ""
+  delete_workflow_by_state_pattern:
+    description: "Workflow states to target (comma-separated or ALL)"
+    required: false
+    default: "ALL"
+  delete_run_by_conclusion_pattern:
+    description: "Run conclusions to target (comma-separated or ALL), e.g. Success,Failure,Cancelled"
+    required: false
+    default: "ALL"
+  check_branch_existence:
+    description: "Skip runs whose head branch still exists"
+    required: false
+    default: "false"
+  check_pullrequest_exist:
+    description: "Skip runs linked to open/closed pull requests"
+    required: false
+    default: "false"
+  dry_run:
+    description: "Simulate deletions without performing them. Set to false to delete for real."
+    required: false
+    default: "true"
+
+outputs:
+  repos_processed:
+    description: "Number of repositories processed"
+    value: ${{ steps.run.outputs.repos_processed }}
+  repos_failed:
+    description: "Number of repositories that failed"
+    value: ${{ steps.run.outputs.repos_failed }}
+  deleted_count:
+    description: "Number of workflow runs deleted"
+    value: ${{ steps.run.outputs.deleted_count }}
+  simulated_count:
+    description: "Number of workflow runs simulated in dry-run mode"
+    value: ${{ steps.run.outputs.simulated_count }}
+  failed_count:
+    description: "Number of deletions that failed"
+    value: ${{ steps.run.outputs.failed_count }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      run: node "${{ github.action_path }}/index.js"
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_BASEURL: ${{ inputs.baseUrl }}
+        INPUT_OWNER: ${{ inputs.owner }}
+        INPUT_REPOSITORIES: ${{ inputs.repositories }}
+        INPUT_INCLUDE_PRIVATE: ${{ inputs.include_private }}
+        INPUT_INCLUDE_FORKS: ${{ inputs.include_forks }}
+        INPUT_INCLUDE_ARCHIVED: ${{ inputs.include_archived }}
+        INPUT_REPO_PATTERN: ${{ inputs.repo_pattern }}
+        INPUT_EXCLUDE_REPOS: ${{ inputs.exclude_repos }}
+        INPUT_RETAIN_DAYS: ${{ inputs.retain_days }}
+        INPUT_KEEP_MINIMUM_RUNS: ${{ inputs.keep_minimum_runs }}
+        INPUT_USE_DAILY_RETENTION: ${{ inputs.use_daily_retention }}
+        INPUT_DELETE_WORKFLOW_PATTERN: ${{ inputs.delete_workflow_pattern }}
+        INPUT_DELETE_WORKFLOW_BY_STATE_PATTERN: ${{ inputs.delete_workflow_by_state_pattern }}
+        INPUT_DELETE_RUN_BY_CONCLUSION_PATTERN: ${{ inputs.delete_run_by_conclusion_pattern }}
+        INPUT_CHECK_BRANCH_EXISTENCE: ${{ inputs.check_branch_existence }}
+        INPUT_CHECK_PULLREQUEST_EXIST: ${{ inputs.check_pullrequest_exist }}
+        INPUT_DRY_RUN: ${{ inputs.dry_run }}

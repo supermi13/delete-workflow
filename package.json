@@ -1,0 +1,22 @@
+{
+  "name": "delete-workflow",
+  "version": "1.0.0",
+  "description": "Delete old GitHub Actions workflow runs across ALL repositories — GitHub Action + CLI, zero dependencies.",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "github",
+    "actions",
+    "workflow-runs",
+    "cleanup",
+    "delete"
+  ],
+  "author": "supermi13",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

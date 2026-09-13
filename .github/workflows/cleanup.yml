@@ -1,0 +1,54 @@
+name: Scheduled cleanup (all repositories)
+
+# Cleans workflow runs of EVERY repository owned by `owner`.
+#
+# Setup (once):
+#   1. Create a classic PAT with `repo` scope (or a fine-grained PAT with
+#      "Actions: Read and write" on all repos) — the default GITHUB_TOKEN
+#      cannot see other repositories.
+#   2. Add it as a repository secret named PAT.
+#   3. Adjust `owner`, `retain_days`, `keep_minimum_runs` below.
+#
+# The schedule defaults to dry-run=false (real deletion). Trigger it manually
+# with "dry_run" checked first to preview what would be removed.
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # daily at 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (simulate only, delete nothing)"
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: delete-workflow-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      HAS_PAT: ${{ secrets.PAT != '' }}
+    steps:
+      - name: Require PAT secret
+        if: ${{ env.HAS_PAT != 'true' }}
+        run: |
+          echo "::error::Repository secret 'PAT' is not set. Create a classic PAT with repo scope and add it as the 'PAT' secret to clean all repositories."
+          exit 1
+
+      - name: Delete old workflow runs in all repositories
+        uses: ./
+        with:
+          token: ${{ secrets.PAT }}
+          owner: supermi13
+          repositories: ALL
+          include_private: "true"
+          include_forks: "false"
+          include_archived: "false"
+          retain_days: "30"
+          keep_minimum_runs: "6"
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
