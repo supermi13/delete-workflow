@@ -9,10 +9,12 @@ name: Scheduled maintenance (cleanup + fork sync)
 #      "Actions: Read and write" + "Contents: Read and write" on all repos) —
 #      the default GITHUB_TOKEN cannot see other repositories.
 #   2. Add it as a repository secret named PAT.
-#   3. Adjust `owner`, `retain_days`, `keep_minimum_runs` below.
+#   3. Adjust the `workflow_dispatch` defaults below (owner, retain_days, ...).
 #
-# The schedule defaults to dry_run=false (real deletion + real sync). Trigger
-# it manually with "dry_run" checked first to preview what would happen.
+# Manual run: click "Run workflow" to open the parameter panel. Every field on
+# the panel overrides the corresponding default for that single run; the daily
+# scheduled run always uses the hardcoded defaults below (real deletion + sync).
+# Start with `dry_run` checked to preview what would happen.
 
 on:
   schedule:
@@ -23,6 +25,59 @@ on:
         description: "Dry run (simulate only, change nothing)"
         type: boolean
         default: true
+      owner:
+        description: "Account whose repositories are processed (user or org)"
+        type: string
+        default: "supermi13"
+      repositories:
+        description: "Which repositories to process"
+        type: choice
+        options:
+          - ALL
+          - SPECIFIC
+        default: ALL
+      specific_repos:
+        description: "Comma/space separated owner/repo list (only when repositories = SPECIFIC)"
+        type: string
+        default: ""
+      retain_days:
+        description: "Delete runs older than N days (0 = no age limit)"
+        type: choice
+        options:
+          - "0"
+          - "1"
+          - "3"
+          - "7"
+          - "14"
+          - "30"
+        default: "1"
+      keep_minimum_runs:
+        description: "Minimum newest runs kept per workflow"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "5"
+          - "6"
+          - "10"
+        default: "2"
+      include_private:
+        description: "Include private repositories"
+        type: boolean
+        default: true
+      include_forks:
+        description: "Include forked repositories (delete step)"
+        type: boolean
+        default: true
+      include_archived:
+        description: "Include archived repositories"
+        type: boolean
+        default: false
+      delete_run_by_conclusion_pattern:
+        description: "Only target runs with these conclusions, e.g. Success,Failure (blank = ALL)"
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -48,21 +103,22 @@ jobs:
         uses: ./
         with:
           token: ${{ secrets.PAT }}
-          owner: supermi13
-          repositories: ALL
-          include_private: "true"
-          include_forks: "true"
-          include_archived: "false"
-          retain_days: "1"
-          keep_minimum_runs: "2"
-          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
+          owner: ${{ github.event_name == 'workflow_dispatch' && inputs.owner || 'supermi13' }}
+          repositories: ${{ github.event_name == 'workflow_dispatch' && (inputs.repositories == 'SPECIFIC' && inputs.specific_repos || 'ALL') || 'ALL' }}
+          include_private: ${{ github.event_name == 'workflow_dispatch' && inputs.include_private && 'true' || 'false' }}
+          include_forks: ${{ github.event_name == 'workflow_dispatch' && inputs.include_forks && 'true' || 'false' }}
+          include_archived: ${{ github.event_name == 'workflow_dispatch' && inputs.include_archived && 'true' || 'false' }}
+          retain_days: ${{ github.event_name == 'workflow_dispatch' && inputs.retain_days || '1' }}
+          keep_minimum_runs: ${{ github.event_name == 'workflow_dispatch' && inputs.keep_minimum_runs || '2' }}
+          delete_run_by_conclusion_pattern: ${{ github.event_name == 'workflow_dispatch' && inputs.delete_run_by_conclusion_pattern || '' }}
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
 
       - name: Sync all forked repositories
         uses: ./sync-forks
         with:
           token: ${{ secrets.PAT }}
-          owner: supermi13
-          repositories: ALL
-          include_private: "true"
-          include_archived: "false"
-          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
+          owner: ${{ github.event_name == 'workflow_dispatch' && inputs.owner || 'supermi13' }}
+          repositories: ${{ github.event_name == 'workflow_dispatch' && (inputs.repositories == 'SPECIFIC' && inputs.specific_repos || 'ALL') || 'ALL' }}
+          include_private: ${{ github.event_name == 'workflow_dispatch' && inputs.include_private && 'true' || 'false' }}
+          include_archived: ${{ github.event_name == 'workflow_dispatch' && inputs.include_archived && 'true' || 'false' }}
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
