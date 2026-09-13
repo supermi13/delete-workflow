@@ -13,7 +13,7 @@ jobs:
   action-mode:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run delete action (dry-run)
         uses: ./
         with:
@@ -24,7 +24,7 @@ jobs:
   sync-mode:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run sync-forks action (dry-run, current repo is not a fork → skipped)
         uses: ./sync-forks
         with:
@@ -35,7 +35,7 @@ jobs:
   cli-mode:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run delete CLI (dry-run)
         run: |
           node index.js \

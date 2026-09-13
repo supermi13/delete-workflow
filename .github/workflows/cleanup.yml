@@ -36,6 +36,8 @@ jobs:
     env:
       HAS_PAT: ${{ secrets.PAT != '' }}
     steps:
+      - uses: actions/checkout@v5
+
       - name: Check PAT secret
         if: ${{ env.HAS_PAT != 'true' }}
         run: |
