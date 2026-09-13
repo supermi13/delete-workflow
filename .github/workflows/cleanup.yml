@@ -53,8 +53,8 @@ jobs:
           include_private: "true"
           include_forks: "true"
           include_archived: "false"
-          retain_days: "30"
-          keep_minimum_runs: "6"
+          retain_days: "1"
+          keep_minimum_runs: "2"
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
 
       - name: Sync all forked repositories
