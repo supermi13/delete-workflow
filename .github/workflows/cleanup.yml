@@ -1,16 +1,18 @@
-name: Scheduled cleanup (all repositories)
+name: Scheduled maintenance (cleanup + fork sync)
 
-# Cleans workflow runs of EVERY repository owned by `owner`.
+# Runs two maintenance tasks together on one schedule:
+#   1. Delete old workflow runs in EVERY repository owned by `owner`
+#   2. Sync every forked repository with its upstream ("Syncing a fork")
 #
 # Setup (once):
 #   1. Create a classic PAT with `repo` scope (or a fine-grained PAT with
-#      "Actions: Read and write" on all repos) — the default GITHUB_TOKEN
-#      cannot see other repositories.
+#      "Actions: Read and write" + "Contents: Read and write" on all repos) —
+#      the default GITHUB_TOKEN cannot see other repositories.
 #   2. Add it as a repository secret named PAT.
 #   3. Adjust `owner`, `retain_days`, `keep_minimum_runs` below.
 #
-# The schedule defaults to dry-run=false (real deletion). Trigger it manually
-# with "dry_run" checked first to preview what would be removed.
+# The schedule defaults to dry_run=false (real deletion + real sync). Trigger
+# it manually with "dry_run" checked first to preview what would happen.
 
 on:
   schedule:
@@ -18,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Dry run (simulate only, delete nothing)"
+        description: "Dry run (simulate only, change nothing)"
         type: boolean
         default: true
 
@@ -29,15 +31,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  cleanup:
+  maintenance:
     runs-on: ubuntu-latest
     env:
       HAS_PAT: ${{ secrets.PAT != '' }}
     steps:
-      - name: Require PAT secret
+      - name: Check PAT secret
         if: ${{ env.HAS_PAT != 'true' }}
         run: |
-          echo "::error::Repository secret 'PAT' is not set. Create a classic PAT with repo scope and add it as the 'PAT' secret to clean all repositories."
+          echo "::error::Repository secret 'PAT' is not set. Create a classic PAT with repo scope and add it as the 'PAT' secret to clean all repositories and sync forks."
           exit 1
 
       - name: Delete old workflow runs in all repositories
@@ -51,4 +53,14 @@ jobs:
           include_archived: "false"
           retain_days: "30"
           keep_minimum_runs: "6"
+          dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}
+
+      - name: Sync all forked repositories
+        uses: ./sync-forks
+        with:
+          token: ${{ secrets.PAT }}
+          owner: supermi13
+          repositories: ALL
+          include_private: "true"
+          include_archived: "false"
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && 'true' || 'false' }}

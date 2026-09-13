@@ -1,0 +1,95 @@
+name: "Sync All Forks"
+description: >-
+  Sync every forked repository of a user/org account with its upstream
+  ("Syncing a fork"). Companion to the root delete-workflow action; designed
+  to run in the same scheduled workflow. Dry-run by default.
+author: "supermi13"
+
+branding:
+  icon: "refresh-cw"
+  color: "blue"
+
+inputs:
+  token:
+    description: >-
+      GitHub token with Contents write on every target fork — use a classic
+      PAT with `repo` scope. The built-in `github.token` only reaches the
+      current repository.
+    required: false
+    default: ""
+  baseUrl:
+    description: "GitHub API base URL (for GitHub Enterprise)"
+    required: false
+    default: "https://api.github.com"
+  owner:
+    description: >-
+      Account whose forks are enumerated (user or org). Defaults to the
+      token's own account.
+    required: false
+    default: ""
+  repositories:
+    description: >-
+      "ALL" (default) to sync every fork of `owner`, or a comma/space
+      separated list of "owner/repo" entries to restrict the run.
+    required: false
+    default: "ALL"
+  include_private:
+    description: "Include private forks in ALL mode"
+    required: false
+    default: "true"
+  include_archived:
+    description: "Include archived forks in ALL mode"
+    required: false
+    default: "false"
+  repo_pattern:
+    description: "Only forks whose name contains one of these comma-separated substrings"
+    required: false
+    default: ""
+  exclude_repos:
+    description: "Forks to skip, comma-separated ('owner/repo' or 'repo-name')"
+    required: false
+    default: ""
+  dry_run:
+    description: "List forks without syncing. Set to false to sync for real."
+    required: false
+    default: "true"
+
+outputs:
+  forks_total:
+    description: "Number of forks processed"
+    value: ${{ steps.run.outputs.forks_total }}
+  synced_count:
+    description: "Forks synced (fast-forward or merge)"
+    value: ${{ steps.run.outputs.synced_count }}
+  up_to_date_count:
+    description: "Forks already up to date"
+    value: ${{ steps.run.outputs.up_to_date_count }}
+  diverged_count:
+    description: "Forks diverged from upstream (need manual handling)"
+    value: ${{ steps.run.outputs.diverged_count }}
+  skipped_count:
+    description: "Repositories skipped (not a fork)"
+    value: ${{ steps.run.outputs.skipped_count }}
+  failed_count:
+    description: "Forks that failed to sync"
+    value: ${{ steps.run.outputs.failed_count }}
+  simulated_count:
+    description: "Forks simulated in dry-run mode"
+    value: ${{ steps.run.outputs.simulated_count }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: run
+      shell: bash
+      run: node "${{ github.action_path }}/../sync-forks.js"
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_BASEURL: ${{ inputs.baseUrl }}
+        INPUT_OWNER: ${{ inputs.owner }}
+        INPUT_REPOSITORIES: ${{ inputs.repositories }}
+        INPUT_INCLUDE_PRIVATE: ${{ inputs.include_private }}
+        INPUT_INCLUDE_ARCHIVED: ${{ inputs.include_archived }}
+        INPUT_REPO_PATTERN: ${{ inputs.repo_pattern }}
+        INPUT_EXCLUDE_REPOS: ${{ inputs.exclude_repos }}
+        INPUT_DRY_RUN: ${{ inputs.dry_run }}
