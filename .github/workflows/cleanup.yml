@@ -22,26 +22,26 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Dry run (simulate only, change nothing)"
+        description: "试运行（仅模拟，不会真的删除任何内容）"
         type: boolean
         default: true
       owner:
-        description: "Account whose repositories are processed (user or org)"
+        description: "要处理仓库所属的账号（用户或组织）"
         type: string
         default: "supermi13"
       repositories:
-        description: "Which repositories to process"
+        description: "要处理哪些仓库"
         type: choice
         options:
           - ALL
           - SPECIFIC
         default: ALL
       specific_repos:
-        description: "Comma/space separated owner/repo list (only when repositories = SPECIFIC)"
+        description: "指定仓库列表（仅当“仓库范围”选择 SPECIFIC 时生效），用逗号或空格分隔，格式 owner/repo"
         type: string
         default: ""
       retain_days:
-        description: "Delete runs older than N days (0 = no age limit)"
+        description: "删除超过 N 天的运行记录（0 = 不限制时间）"
         type: choice
         options:
           - "0"
@@ -52,7 +52,7 @@ on:
           - "30"
         default: "1"
       keep_minimum_runs:
-        description: "Minimum newest runs kept per workflow"
+        description: "每个工作流至少保留最近 N 次运行记录"
         type: choice
         options:
           - "1"
@@ -63,19 +63,19 @@ on:
           - "10"
         default: "2"
       include_private:
-        description: "Include private repositories"
+        description: "包含私有仓库"
         type: boolean
         default: true
       include_forks:
-        description: "Include forked repositories (delete step)"
+        description: "包含 Fork 仓库（删除步骤）"
         type: boolean
         default: true
       include_archived:
-        description: "Include archived repositories"
+        description: "包含已归档仓库"
         type: boolean
         default: false
       delete_run_by_conclusion_pattern:
-        description: "Only target runs with these conclusions, e.g. Success,Failure (blank = ALL)"
+        description: "只删除符合指定结论的运行记录，例如 Success,Failure（留空 = 全部）"
         type: string
         default: ""
 
