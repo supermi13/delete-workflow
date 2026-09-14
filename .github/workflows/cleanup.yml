@@ -15,6 +15,7 @@ name: Scheduled maintenance (cleanup + fork sync)
 # the panel overrides the corresponding default for that single run; the daily
 # scheduled run always uses the hardcoded defaults below (real deletion + sync).
 # Start with `dry_run` checked to preview what would happen.
+# Use `sync_forks` (manual runs only) to skip the fork-sync step entirely.
 
 on:
   schedule:
@@ -78,6 +79,10 @@ on:
         description: "只删除符合指定结论的运行记录，例如 Success,Failure（留空 = 全部）"
         type: string
         default: ""
+      sync_forks:
+        description: "同步 Fork 仓库（是否执行 Fork 同步步骤）"
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -114,6 +119,7 @@ jobs:
           dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
 
       - name: Sync all forked repositories
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.sync_forks }}
         uses: ./sync-forks
         with:
           token: ${{ secrets.PAT }}
